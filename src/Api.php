@@ -17,9 +17,8 @@ class Api
     private $streamer;
     /** @var callable[] **/
     private $callbacks;
-
-    /** @var int */
-    private $lastSavedId = 0;
+    /** @var GetUpdates] **/
+    private $getUpdates;
 
     /**
      * Api constructor.
@@ -29,6 +28,7 @@ class Api
     public function __construct(Streamer $streamer)
     {
         $this->streamer = $streamer;
+        $this->getUpdates = new GetUpdates();
     }
 
     public function listen(): void
@@ -58,16 +58,12 @@ class Api
     /**
      * @return Update[]
      *
-     * @throws \GuzzleHttp\Exception\GuzzleException
+     * @throws GuzzleException
      */
     public function getUpdates(): array
     {
         /** @var Update[] $updates */
-        $updates = $this->streamer->request(new GetUpdates($this->lastSavedId));
-
-        if (false === empty($updates)) {
-            $this->lastSavedId = end($updates)->getId() + 1;
-        }
+        $updates = $this->streamer->request($this->getUpdates);
 
         return $updates;
     }

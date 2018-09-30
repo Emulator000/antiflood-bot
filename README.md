@@ -8,7 +8,10 @@ imports:
   - { resource: config.yaml }
 
 bot:
-  token: 'YOUR_TOKEN_HERE'
+  token:
+    - 'YOUR_TOKEN_HERE'
+    - 'YOUR_SECOND_TOKEN_HERE'
+    - '...'
 
 ```
 

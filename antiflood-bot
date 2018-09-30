@@ -5,4 +5,6 @@ use Antiflood\Config;
 
 require __DIR__ . '/vendor/autoload.php';
 
+set_time_limit(0);
+
 $bot = new Bot(new Config());

@@ -13,17 +13,21 @@ class Config
 {
     /** @var array */
     private $yamlRaw;
-    /** @var string */
-    private $token;
+    /** @var string[] */
+    private $tokens;
 
     /**
      * Config constructor.
+     *
+     * @throws \Exception
      */
     public function __construct()
     {
         $yamlPath = __DIR__ . '/../config/config_local.yaml';
         if (false === file_exists($yamlPath)) {
-            echo 'Couldn\'t load config file! Please create a "config_local.yaml" that extends the "config.yaml" file.';
+            throw new \Exception(
+                'Couldn\'t load config file! Please create a "config_local.yaml" that extends the "config.yaml" file.'
+            );
         }
 
         $this->yamlRaw = Yaml::parseFile($yamlPath);
@@ -40,15 +44,15 @@ class Config
         }
 
         if (false === empty($this->yamlRaw['bot']['token'])) {
-            $this->token = $this->yamlRaw['bot']['token'];
+            $this->tokens = $this->yamlRaw['bot']['token'];
         }
     }
 
     /**
-     * @return string
+     * @return string[]
      */
-    public function getToken(): string
+    public function getTokens(): array
     {
-        return $this->token;
+        return $this->tokens;
     }
 }

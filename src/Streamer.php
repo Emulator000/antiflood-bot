@@ -3,9 +3,11 @@
 namespace Antiflood;
 
 use Antiflood\Telegram\Methods\Request as TelegramRequest;
+use Antiflood\Telegram\Types\Chat;
 use Antiflood\Telegram\Update;
 use GuzzleHttp\Client;
 use Psr\Http\Message\ResponseInterface;
+use iter;
 
 /**
  * Class Streamer
@@ -21,21 +23,21 @@ class Streamer
 
     /** @var Client **/
     private $guzzleClient;
-    /** @var string **/
-    private $token;
+    /** @var string[] **/
+    private $tokens;
+
+    /** @var string[] */
+    private $updateIds = [];
 
     /**
      * Streamer constructor.
      *
-     * @param string $token
+     * @param string[] $tokens
      */
-    public function __construct(string $token)
+    public function __construct(array $tokens)
     {
-        $this->token = $token;
+        $this->tokens = $tokens;
         $this->guzzleClient = new Client([
-            // Base URI is used with relative requests
-            'base_uri' => $this->getUri(),
-            // You can set any number of default request options.
             'timeout'  => self::TIMEOUT,
         ]);
     }
@@ -43,16 +45,18 @@ class Streamer
     /**
      * @param string $methodName
      *
-     * @return string
+     * @return \Iterator
      */
-    private function getUri(string $methodName = ''): string
+    private function getUri(string $methodName = ''): \Iterator
     {
-        return sprintf(
-            '%sbot%s%s',
-            self::URL,
-            $this->token,
-            false === empty($methodName) ? ('/'. $methodName) : ''
-        );
+        foreach ($this->tokens as $token) {
+            yield sprintf(
+                '%sbot%s%s',
+                self::URL,
+                $token,
+                false === empty($methodName) ? ('/'. $methodName) : ''
+            );
+        }
     }
 
     /**
@@ -64,15 +68,26 @@ class Streamer
      */
     public function request(TelegramRequest $request): array
     {
-        return $this->parseResponse(
-            $this->guzzleClient->request(
-                $request->getMethod(),
-                $this->getUri($request->getName()),
-                [
-                    'form_params' => $request->getParams(),
-                ]
-            )
-        );
+        $updates = [];
+        foreach ($this->getUri($request->getName()) as $botIndex => $uri) {
+            $newUpdates = $this->parseResponse(
+                $this->guzzleClient->request(
+                    $request->getMethod(),
+                    $uri,
+                    [
+                        'form_params' => $request->getParams(),
+                    ]
+                )
+            );
+
+            $request->handleUpdates($newUpdates, $botIndex);
+
+            $updates = array_merge($updates, $this->filterDuplicated($newUpdates));
+
+            $this->updateIds = array_merge($this->updateIds, $this->generateUpdateIds($updates));
+        }
+
+        return $updates;
     }
 
     /**
@@ -85,5 +100,77 @@ class Streamer
         $response = json_decode((string)$response->getBody(), JSON_OBJECT_AS_ARRAY);
 
         return true === $response['ok'] ? Update::parseUpdates($response['result'] ?? null) : [];
+    }
+
+    /**
+     * @param Update[] $updates
+     *
+     * @return array
+     */
+    private function generateUpdateIds(array $updates): array
+    {
+        $updatedIds = [];
+        foreach ($updates as $update) {
+            $message = $update->getMessage();
+//            $editedMessage = $update->getEditedMessage();
+
+            if (null !== $message) {
+                $chat = $message->getChat();
+                $userId = null !== $message->getUser() ? $message->getUser()->getId() : 0;
+
+                if (null !== $chat) {
+                    if (Chat::GROUP == $chat->getType()) {
+                        $updatedIds[] = sprintf(
+                            '(%d,%d,%s)',
+                            $chat->getId(),
+                            $userId
+                        );
+                    } else {
+                        $updatedIds[] = sprintf(
+                            '(%d,%d)',
+                            $chat->getId(),
+                            $userId
+                        );
+                    }
+                } else {
+                    $updatedIds[] = 0;
+                }
+            } else {
+                $chat = $message->getChat();
+                $userId = null !== $message->getUser() ? $message->getUser()->getId() : 0;
+
+                if (null !== $chat) {
+                    $updatedIds[] = sprintf(
+                        '(%d,%d)',
+                        $chat->getId(),
+                        $userId
+                    );
+                } else {
+                    $updatedIds[] = 0;
+                }
+            }
+        }
+
+        return $updatedIds;
+    }
+
+    /**
+     * @param Update[] $updates
+     *
+     * @return Update[]
+     */
+    private function filterDuplicated(array $updates): array
+    {
+        $updatedIds = $this->generateUpdateIds($updates);
+        foreach ($updatedIds as $index => $newUpdatedId) {
+            foreach ($this->updateIds as $updateId) {
+                if ($updateId === $newUpdatedId) {
+//                    echo sprintf('Rimuovo %s perché già presente!', $updateId), PHP_EOL;
+                    unset($updates[$index]);
+                }
+            }
+        }
+
+        return $updates;
     }
 }

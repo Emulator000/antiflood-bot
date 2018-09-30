@@ -12,6 +12,11 @@ class User implements TypeInterface
     /** @var int */
     private $id;
 
+    /**
+     * @param array $user
+     *
+     * @return User
+     */
     public static function parseUser(?array $user): ?User
     {
         return (new self())

@@ -5,7 +5,8 @@
     "require": {
         "ext-json": "*",
         "guzzlehttp/guzzle": "^6.3",
-        "symfony/yaml": "^4.1"
+        "symfony/yaml": "^4.1",
+        "nikic/iter": "^1.6"
     },
     "autoload": {
         "psr-4": {"Antiflood\\": "src/"}

@@ -15,6 +15,8 @@ class Update implements UpdateInterface
     private $id;
     /** @var Message */
     private $message;
+    /** @var Message */
+    private $editedMessage;
 
     /**
      * @param array $results
@@ -50,6 +52,7 @@ class Update implements UpdateInterface
         return (new self())
             ->setId($result['update_id'] ?? null)
             ->setMessage(Message::parseMessage($result['message'] ?? null))
+            ->setEditedMessage(Message::parseMessage($result['edited_message'] ?? null))
             ;
     }
 
@@ -91,5 +94,25 @@ class Update implements UpdateInterface
     public function getMessage(): ?Message
     {
         return $this->message;
+    }
+
+    /**
+     * @param Message $editedMessage
+     *
+     * @return self
+     */
+    private function setEditedMessage(Message $editedMessage): self
+    {
+        $this->editedMessage = $editedMessage;
+
+        return $this;
+    }
+
+    /**
+     * @return Message
+     */
+    public function getEditedMessage(): ?Message
+    {
+        return $this->editedMessage;
     }
 }
