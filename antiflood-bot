@@ -1,0 +1,8 @@
+<?php
+
+use Antiflood\Bot;
+use Antiflood\Config;
+
+require __DIR__ . '/vendor/autoload.php';
+
+$bot = new Bot(new Config());

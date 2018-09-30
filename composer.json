@@ -1,0 +1,19 @@
+{
+    "name": "emulator000/antiflood-bot",
+    "description": "A performing antiflood Telegram Bot made in PHP with long polling",
+    "type": "project",
+    "require": {
+        "ext-json": "*",
+        "guzzlehttp/guzzle": "^6.3",
+        "symfony/yaml": "^4.1"
+    },
+    "autoload": {
+        "psr-4": {"Antiflood\\": "src/"}
+    },
+    "authors": [
+        {
+            "name": "Dario",
+            "email": "emulator@hotmail.it"
+        }
+    ]
+}
