@@ -81,7 +81,7 @@ class Antiflood extends Handler
                             var_export($message->getUser(), true)
                         ), PHP_EOL;
 
-                        //ToDo:: delete the message here!
+                        $api->deleteMessage($message->getChat()->getId(), $message->getId());
                     }
                 }
 

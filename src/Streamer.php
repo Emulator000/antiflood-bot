@@ -82,6 +82,14 @@ class Streamer
     {
         $response = json_decode((string)$response->getBody(), JSON_OBJECT_AS_ARRAY);
 
-        return true === $response['ok'] ? Update::parseUpdates($response['result'] ?? null) : [];
+        $result = [];
+        if (true === $response['ok']) {
+            $result = $response['result'] ?? null;
+            if (null !== $result && false === is_array($result)) {
+                $result = [];
+            }
+        }
+
+        return Update::parseUpdates($result);
     }
 }

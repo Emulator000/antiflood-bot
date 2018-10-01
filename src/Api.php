@@ -2,6 +2,7 @@
 
 namespace Antiflood;
 
+use Antiflood\Telegram\Methods\DeleteMessage;
 use Antiflood\Telegram\Methods\GetUpdates;
 use Antiflood\Telegram\Methods\SendMessage;
 use Antiflood\Telegram\Types\Chat;
@@ -73,6 +74,17 @@ class Api
     public function sendMessage(int $chatId, string $text): void
     {
         $this->getStreamer($chatId)->request(new SendMessage($chatId, $text));
+    }
+
+    /**
+     * @param int $chatId
+     * @param int $messageId
+     *
+     * @throws GuzzleException
+     */
+    public function deleteMessage(int $chatId, int $messageId): void
+    {
+        $this->getStreamer($chatId)->request(new DeleteMessage($chatId, $messageId));
     }
 
     /**
