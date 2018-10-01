@@ -109,49 +109,57 @@ class Streamer
      */
     private function generateUpdateIds(array $updates): array
     {
-        $updatedIds = [];
-        foreach ($updates as $update) {
-            $message = $update->getMessage();
-//            $editedMessage = $update->getEditedMessage();
+        return array_map(
+            function ($update) {
+                return $this->generateUpdateId($update);
+            },
+            $updates
+        );
+    }
 
-            if (null !== $message) {
-                $chat = $message->getChat();
-                $userId = null !== $message->getUser() ? $message->getUser()->getId() : 0;
+    /**
+     * @param Update $update
+     *
+     * @return string
+     */
+    private function generateUpdateId(Update $update): string
+    {
+        $message = $update->getMessage();
+//        $editedMessage = $update->getEditedMessage();
 
-                if (null !== $chat) {
-                    if (Chat::GROUP == $chat->getType()) {
-                        $updatedIds[] = sprintf(
-                            '(%d,%d,%s)',
-                            $chat->getId(),
-                            $userId
-                        );
-                    } else {
-                        $updatedIds[] = sprintf(
-                            '(%d,%d)',
-                            $chat->getId(),
-                            $userId
-                        );
-                    }
-                } else {
-                    $updatedIds[] = 0;
-                }
-            } else {
-                $chat = $message->getChat();
-                $userId = null !== $message->getUser() ? $message->getUser()->getId() : 0;
+        if (null !== $message) {
+            $chat = $message->getChat();
+            $userId = null !== $message->getUser() ? $message->getUser()->getId() : 0;
 
-                if (null !== $chat) {
-                    $updatedIds[] = sprintf(
-                        '(%d,%d)',
+            if (null !== $chat) {
+                if (Chat::GROUP == $chat->getType()) {
+                    return sprintf(
+                        '(%d,%d,%s)',
                         $chat->getId(),
                         $userId
                     );
                 } else {
-                    $updatedIds[] = 0;
+                    return sprintf(
+                        '(%d,%d)',
+                        $chat->getId(),
+                        $userId
+                    );
                 }
+            }
+        } else {
+            $chat = $message->getChat();
+            $userId = null !== $message->getUser() ? $message->getUser()->getId() : 0;
+
+            if (null !== $chat) {
+                return sprintf(
+                    '(%d,%d)',
+                    $chat->getId(),
+                    $userId
+                );
             }
         }
 
-        return $updatedIds;
+        return '0';
     }
 
     /**
@@ -161,16 +169,11 @@ class Streamer
      */
     private function filterDuplicated(array $updates): array
     {
-        $updatedIds = $this->generateUpdateIds($updates);
-        foreach ($updatedIds as $index => $newUpdatedId) {
-            foreach ($this->updateIds as $updateId) {
-                if ($updateId === $newUpdatedId) {
-//                    echo sprintf('Rimuovo %s perché già presente!', $updateId), PHP_EOL;
-                    unset($updates[$index]);
-                }
+        return array_filter(
+            $updates,
+            function ($update) {
+                return false === isset($this->updateIds[$this->generateUpdateId($update)]);
             }
-        }
-
-        return $updates;
+        );
     }
 }

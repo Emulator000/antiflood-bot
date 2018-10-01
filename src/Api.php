@@ -17,7 +17,7 @@ class Api
     private $streamer;
     /** @var callable[] **/
     private $callbacks;
-    /** @var GetUpdates] **/
+    /** @var GetUpdates **/
     private $getUpdates;
 
     /**
@@ -62,9 +62,6 @@ class Api
      */
     public function getUpdates(): array
     {
-        /** @var Update[] $updates */
-        $updates = $this->streamer->request($this->getUpdates);
-
-        return $updates;
+        return $this->streamer->request($this->getUpdates);
     }
 }
