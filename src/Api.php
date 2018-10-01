@@ -3,6 +3,7 @@
 namespace Antiflood;
 
 use Antiflood\Telegram\Methods\GetUpdates;
+use Antiflood\Telegram\Methods\SendMessage;
 use Antiflood\Telegram\Types\Chat;
 use Antiflood\Telegram\Update;
 use GuzzleHttp\Exception\GuzzleException;
@@ -22,6 +23,8 @@ class Api
     /** @var callable[] **/
     private $callbacks;
 
+    /** @var int[] */
+    private $currentIndex = [];
     /** @var int[] */
     private $savedIds = [];
     /** @var string[] */
@@ -62,11 +65,36 @@ class Api
     }
 
     /**
+     * @param int $chatId
+     * @param string $text
+     *
+     * @throws GuzzleException
+     */
+    public function sendMessage(int $chatId, string $text): void
+    {
+        $this->getStreamer($chatId)->request(new SendMessage($chatId, $text));
+    }
+
+    /**
+     * @param int $chatId
+     *
+     * @return Streamer
+     */
+    private function getStreamer(int $chatId): Streamer
+    {
+        if (false === isset($this->currentIndex[$chatId])) {
+            $this->currentIndex[$chatId] = 0;
+        }
+
+        return $this->streamers[$this->currentIndex[$chatId]++ % \count($this->streamers)];
+    }
+
+    /**
      * @return Update[]
      *
      * @throws GuzzleException
      */
-    public function getUpdates(): array
+    private function getUpdates(): array
     {
         return array_reduce(
             array_map(
@@ -93,21 +121,6 @@ class Api
     }
 
     /**
-     * @param Update[] $updates
-     *
-     * @return array
-     */
-    private function generateUpdateIds(array $updates): array
-    {
-        return array_map(
-            function ($update) {
-                return $this->generateUpdateId($update);
-            },
-            $updates
-        );
-    }
-
-    /**
      * @param Update $update
      *
      * @return string
@@ -126,12 +139,13 @@ class Api
                     return sprintf(
                         '(%d,%d,%s)',
                         $chat->getId(),
-                        $userId
+                        $userId,
+                        'date'
                     );
                 } else {
                     return sprintf(
                         '(%d,%d)',
-                        $chat->getId(),
+                        $message->getId(),
                         $userId
                     );
                 }
@@ -143,7 +157,7 @@ class Api
             if (null !== $chat) {
                 return sprintf(
                     '(%d,%d)',
-                    $chat->getId(),
+                    $message->getId(),
                     $userId
                 );
             }

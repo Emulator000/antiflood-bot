@@ -9,7 +9,7 @@ use Antiflood\Telegram\Types\Message;
  *
  * @package Antiflood\Telegram\Types
  */
-class Update implements UpdateInterface
+class Update
 {
     /** @var int */
     private $id;
@@ -25,7 +25,7 @@ class Update implements UpdateInterface
      */
     public static function parseUpdates(?array $results): array
     {
-        if (true === empty($results)) {
+        if (true === empty($results) || false === is_numeric(key($results))) {
             return [];
         }
 

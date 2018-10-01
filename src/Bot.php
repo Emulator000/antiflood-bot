@@ -2,7 +2,7 @@
 
 namespace Antiflood;
 
-use Antiflood\Telegram\UpdateInterface;
+use Antiflood\Telegram\Update;
 
 /**
  * Class Bot
@@ -30,8 +30,8 @@ class Bot
             )
         );
 
-        $this->api->onUpdate(function (UpdateInterface $update) {
-            var_dump($update);
+        $this->api->onUpdate(function (Update $update) {
+            $this->api->sendMessage($update->getMessage()->getChat()->getId(), 'Test!');
         });
 
         $this->api->listen();
