@@ -47,6 +47,8 @@ class Message implements TypeInterface
     private $chat;
     /** @var string */
     private $text;
+    /** @var int */
+    private $date;
 
     /**
      * @param array $message
@@ -60,6 +62,7 @@ class Message implements TypeInterface
             ->setUser(User::parseUser($message['from'] ?? null))
             ->setChat(Chat::parseChat($message['chat'] ?? null))
             ->setText($message['text'] ?? null)
+            ->setDate($message['date'] ?? null)
             ->parseMessageType($message)
             ;
     }
@@ -218,5 +221,25 @@ class Message implements TypeInterface
     public function getText(): ?string
     {
         return $this->text;
+    }
+
+    /**
+     * @param int $date
+     *
+     * @return self
+     */
+    private function setDate(?int $date): self
+    {
+        $this->date = $date;
+
+        return $this;
+    }
+
+    /**
+     * @return int
+     */
+    public function getDate(): ?int
+    {
+        return $this->date;
     }
 }

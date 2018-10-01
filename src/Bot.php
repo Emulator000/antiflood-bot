@@ -2,6 +2,8 @@
 
 namespace Antiflood;
 
+use Antiflood\Handlers\Antiflood\Antiflood;
+use Antiflood\Handlers\HandlerInterface;
 use Antiflood\Telegram\Update;
 
 /**
@@ -13,6 +15,8 @@ class Bot
 {
     /** @var Api **/
     private $api;
+    /** @var HandlerInterface[] **/
+    private $handlers;
 
     /**
      * Bot constructor.
@@ -30,9 +34,13 @@ class Bot
             )
         );
 
-        $this->api->onUpdate(function (Update $update) {
-            $this->api->sendMessage($update->getMessage()->getChat()->getId(), 'Test!');
-        });
+        $this->handlers[] = new Antiflood($config);
+
+        foreach ($this->handlers as $handler) {
+            $this->api->onUpdate(function (Update $update) use ($handler) {
+                $handler->handle($this->api, $update);
+            });
+        }
 
         $this->api->listen();
     }

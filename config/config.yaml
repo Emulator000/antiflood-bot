@@ -1,2 +1,8 @@
 # config/config.yml
 bot:
+  message_len: 0
+  seconds: 1
+  actions: 5
+  join_seconds: 1
+  join_actions: 3
+  minimum_users: 1

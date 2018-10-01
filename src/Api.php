@@ -100,7 +100,6 @@ class Api
             array_map(
                 function (Streamer $streamer, int $index) {
                     $updates = $streamer->request(new GetUpdates($this->savedIds[$index] ?? 0));
-
                     if (false === empty($updates)) {
                         $this->savedIds[$index] = end($updates)->getId() ?? 0;
                     }
@@ -140,7 +139,7 @@ class Api
                         '(%d,%d,%s)',
                         $chat->getId(),
                         $userId,
-                        'date'
+                        'date' //ToDo: put formatted date here as discriminator
                     );
                 } else {
                     return sprintf(
