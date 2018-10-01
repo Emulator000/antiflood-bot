@@ -21,10 +21,19 @@ class Bot
      */
     public function __construct(Config $config)
     {
-        $this->api = new Api(new Streamer($config->getTokens()));
+        $this->api = new Api(
+            array_map(
+                function (string $token) {
+                    return new Streamer($token);
+                },
+                $config->getTokens()
+            )
+        );
+
         $this->api->onUpdate(function (UpdateInterface $update) {
             var_dump($update);
         });
+
         $this->api->listen();
     }
 }

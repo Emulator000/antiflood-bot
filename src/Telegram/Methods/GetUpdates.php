@@ -2,8 +2,6 @@
 
 namespace Antiflood\Telegram\Methods;
 
-use Antiflood\Telegram\Update;
-
 /**
  * Class GetUpdates
  *
@@ -18,18 +16,19 @@ class GetUpdates extends AbstractMethod
 
     /** @var int **/
     private $limit;
-
     /** @var int */
-    private $lastSavedId = [];
+    private $lastId = 0;
 
     /**
      * GetUpdates constructor.
      *
+     * @param int $lastId
      * @param int $limit
      */
-    public function __construct(int $limit = self::DEFAULT_LIMIT)
+    public function __construct(int $lastId = 0, int $limit = self::DEFAULT_LIMIT)
     {
         $this->limit = $limit;
+        $this->lastId = $lastId;
     }
 
     /**
@@ -41,26 +40,13 @@ class GetUpdates extends AbstractMethod
     }
 
     /**
-     * @param int $botIndex
-     *
      * @return array
      */
-    public function getParams(int $botIndex = 0): array
+    public function getParams(): array
     {
         return [
-            'offset' => $this->lastSavedId[$botIndex] ?? 0,
+            'offset' => $this->lastId + 1,
             'limit' => $this->limit,
         ];
-    }
-
-    /**
-     * @param Update[] $updates
-     * @param int $botIndex
-     */
-    public function handleUpdates(array $updates, int $botIndex = 0): void
-    {
-        if (false === empty($updates)) {
-            $this->lastSavedId[$botIndex] = end($updates)->getId() + 1;
-        }
     }
 }

@@ -3,11 +3,10 @@
 namespace Antiflood;
 
 use Antiflood\Telegram\Methods\Request as TelegramRequest;
-use Antiflood\Telegram\Types\Chat;
 use Antiflood\Telegram\Update;
 use GuzzleHttp\Client;
+use GuzzleHttp\Exception\GuzzleException;
 use Psr\Http\Message\ResponseInterface;
-use iter;
 
 /**
  * Class Streamer
@@ -23,20 +22,17 @@ class Streamer
 
     /** @var Client **/
     private $guzzleClient;
-    /** @var string[] **/
-    private $tokens;
-
-    /** @var string[] */
-    private $updateIds = [];
+    /** @var string **/
+    private $token;
 
     /**
      * Streamer constructor.
      *
-     * @param string[] $tokens
+     * @param string $token
      */
-    public function __construct(array $tokens)
+    public function __construct(string $token)
     {
-        $this->tokens = $tokens;
+        $this->token = $token;
         $this->guzzleClient = new Client([
             'timeout'  => self::TIMEOUT,
         ]);
@@ -45,18 +41,16 @@ class Streamer
     /**
      * @param string $methodName
      *
-     * @return \Iterator
+     * @return string
      */
-    private function getUri(string $methodName = ''): \Iterator
+    private function getUri(string $methodName = ''): string
     {
-        foreach ($this->tokens as $token) {
-            yield sprintf(
-                '%sbot%s%s',
-                self::URL,
-                $token,
-                false === empty($methodName) ? ('/'. $methodName) : ''
-            );
-        }
+        return sprintf(
+            '%sbot%s%s',
+            self::URL,
+            $this->token,
+            false === empty($methodName) ? ('/'. $methodName) : ''
+        );
     }
 
     /**
@@ -64,30 +58,19 @@ class Streamer
      *
      * @return Update[]
      *
-     * @throws \GuzzleHttp\Exception\GuzzleException
+     * @throws GuzzleException
      */
     public function request(TelegramRequest $request): array
     {
-        $updates = [];
-        foreach ($this->getUri($request->getName()) as $botIndex => $uri) {
-            $newUpdates = $this->parseResponse(
-                $this->guzzleClient->request(
-                    $request->getMethod(),
-                    $uri,
-                    [
-                        'form_params' => $request->getParams(),
-                    ]
-                )
-            );
-
-            $request->handleUpdates($newUpdates, $botIndex);
-
-            $updates = array_merge($updates, $this->filterDuplicated($newUpdates));
-
-            $this->updateIds = array_merge($this->updateIds, $this->generateUpdateIds($updates));
-        }
-
-        return $updates;
+        return $this->parseResponse(
+            $this->guzzleClient->request(
+                $request->getMethod(),
+                $this->getUri($request->getName()),
+                [
+                    'form_params' => $request->getParams(),
+                ]
+            )
+        );
     }
 
     /**
@@ -100,80 +83,5 @@ class Streamer
         $response = json_decode((string)$response->getBody(), JSON_OBJECT_AS_ARRAY);
 
         return true === $response['ok'] ? Update::parseUpdates($response['result'] ?? null) : [];
-    }
-
-    /**
-     * @param Update[] $updates
-     *
-     * @return array
-     */
-    private function generateUpdateIds(array $updates): array
-    {
-        return array_map(
-            function ($update) {
-                return $this->generateUpdateId($update);
-            },
-            $updates
-        );
-    }
-
-    /**
-     * @param Update $update
-     *
-     * @return string
-     */
-    private function generateUpdateId(Update $update): string
-    {
-        $message = $update->getMessage();
-//        $editedMessage = $update->getEditedMessage();
-
-        if (null !== $message) {
-            $chat = $message->getChat();
-            $userId = null !== $message->getUser() ? $message->getUser()->getId() : 0;
-
-            if (null !== $chat) {
-                if (Chat::GROUP == $chat->getType()) {
-                    return sprintf(
-                        '(%d,%d,%s)',
-                        $chat->getId(),
-                        $userId
-                    );
-                } else {
-                    return sprintf(
-                        '(%d,%d)',
-                        $chat->getId(),
-                        $userId
-                    );
-                }
-            }
-        } else {
-            $chat = $message->getChat();
-            $userId = null !== $message->getUser() ? $message->getUser()->getId() : 0;
-
-            if (null !== $chat) {
-                return sprintf(
-                    '(%d,%d)',
-                    $chat->getId(),
-                    $userId
-                );
-            }
-        }
-
-        return '0';
-    }
-
-    /**
-     * @param Update[] $updates
-     *
-     * @return Update[]
-     */
-    private function filterDuplicated(array $updates): array
-    {
-        return array_filter(
-            $updates,
-            function ($update) {
-                return false === isset($this->updateIds[$this->generateUpdateId($update)]);
-            }
-        );
     }
 }
