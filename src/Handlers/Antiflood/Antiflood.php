@@ -49,7 +49,7 @@ class Antiflood extends Handler
             case self::TYPE_NOTHING:
                 if (true === $antifloodResult->getAlert()) {
                     echo sprintf(
-                        'Cooling down on chat %s',
+                        'Cooling down on chat %s...',
                         var_export($update->getMessage()->getChat(), true)
                     ), PHP_EOL;
                 }
@@ -65,10 +65,11 @@ class Antiflood extends Handler
                 if (false === empty($antifloodResult->getJoins())) {
                     foreach ($antifloodResult->getJoins() as $join) {
                         echo sprintf(
-                            'Just shitbanned an %s',
+                            'Just banned an %s',
                             var_export($join->getUser(), true)
                         ), PHP_EOL;
 
+                        $api->deleteMessage($join->getChat()->getId(), $join->getId());
                         //ToDo:: ban user here!
                     }
                 }
