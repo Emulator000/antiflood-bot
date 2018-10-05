@@ -214,6 +214,8 @@ class Antiflood extends Handler
                 $outputJoins[] = $message;
             }
 
+            $joins = [];
+
             $alert = true;
         }
 
@@ -226,6 +228,7 @@ class Antiflood extends Handler
                 }
             }
 
+            $messages = [];
             $deleted = [];
 
             $alert = true;
@@ -262,6 +265,8 @@ class Antiflood extends Handler
             $alert = false;
         }
 
+        $this->broadcastChecker();
+
         return (new AntifloodResult(self::TYPE_NOTHING))
             ->setAlert($alert)
             ;
@@ -289,5 +294,36 @@ class Antiflood extends Handler
         //ToDo: check for media group and edited in order to avoid fake flood detection
 
         return false;
+    }
+
+    private function broadcastChecker(): void
+    {
+        $now = time();
+
+        foreach ($this->shitbans as $chatId => &$shitbans) {
+            if (true === empty($shitbans[0])) {
+                continue;
+            }
+
+            $shitbans[0] = array_filter(
+                $shitbans[0],
+                function (int $date) use ($now) {
+                    return $now - $date < 5;
+                }
+            );
+
+            if (true === empty($shitbans[0])) {
+                if (false === empty($shitbans[1]) && \count($shitbans[1]) >= $this->config->getMinimumUsers()) {
+                    $messages = $shitbans[1];
+                    $first = current($messages[1]);
+
+                    $shitbans[1] = [];
+
+                    //ToDo: check for broadcast
+                } else {
+                    $shitbans[1] = [];
+                }
+            }
+        }
     }
 }

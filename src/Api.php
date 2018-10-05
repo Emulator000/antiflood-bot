@@ -151,7 +151,7 @@ class Api
                         '(%d,%d,%s)',
                         $chat->getId(),
                         $userId,
-                        'date' //ToDo: put formatted date here as discriminator
+                        $message->getDate()
                     );
                 } else {
                     return sprintf(
@@ -188,8 +188,8 @@ class Api
             $updates,
             function ($update) {
                 $updateId = $this->generateUpdateId($update);
-                if (false === array_key_exists($updateId, $this->updateIds)) {
-                    $this->updateIds[$updateId] = null;
+                if (false === isset($this->updateIds[$updateId])) {
+                    $this->updateIds[$updateId] = 0;
 
                     return true;
                 }
