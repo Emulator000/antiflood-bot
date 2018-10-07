@@ -89,7 +89,15 @@ class Streamer
                     $this->guzzleClient,
                     (function () use ($request, $uri) {
                         while (true) {
-                            yield new Request($request->getMethod(), $uri);
+                            yield function () use ($request, $uri) {
+                                return $this->guzzleClient->requestAsync(
+                                    $request->getMethod(),
+                                    $uri,
+                                    [
+                                        'form_params' => $request->getParams(),
+                                    ]
+                                );
+                            };
                         }
                     })(),
                     [
@@ -102,7 +110,6 @@ class Streamer
                             echo 'Reason: '. $reason, PHP_EOL;
                             echo 'Index: ' . $index, PHP_EOL;
                         },
-                        'options' => $body,
                     ]
                 );
 

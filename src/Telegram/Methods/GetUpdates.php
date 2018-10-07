@@ -65,4 +65,16 @@ class GetUpdates extends AbstractMethod
     {
         return false;
     }
+
+    /**
+     * @param int $lastId
+     *
+     * @return GetUpdates
+     */
+    public function setLastId(int $lastId): self
+    {
+        $this->lastId = $lastId;
+
+        return $this;
+    }
 }

@@ -27,8 +27,6 @@ class Api
     /** @var int[] */
     private $currentIndex = [];
     /** @var int[] */
-    private $savedIds = [];
-    /** @var int[] */
     private $updateIds = [];
 
     /**
@@ -111,14 +109,14 @@ class Api
     private function getUpdates(callable $callback): void
     {
         foreach ($this->streamers as $index => $streamer) {
+            $getUpdates = new GetUpdates();
             $streamer->request(
-                new GetUpdates($this->savedIds[$index] ?? 0),
-                function ($updates) use ($index, $callback) {
+                $getUpdates,
+                function ($updates) use ($getUpdates, $index, $callback) {
                     if (false === empty($updates)) {
-                        $this->savedIds[$index] = end($updates)->getId() ?? 0;
+                        $getUpdates->setLastId(end($updates)->getId() ?? 0);
                     }
 
-                    var_dump($this->savedIds);
                     $callback($this->filterDuplicated($updates));
                 }
             );
