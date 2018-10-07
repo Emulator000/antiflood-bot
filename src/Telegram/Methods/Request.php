@@ -27,5 +27,10 @@ interface Request
     /**
      * @return bool
      */
+    public function isPool(): bool;
+
+    /**
+     * @return bool
+     */
     public function isAsync(): bool;
 }

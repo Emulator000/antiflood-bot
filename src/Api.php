@@ -28,7 +28,7 @@ class Api
     private $currentIndex = [];
     /** @var int[] */
     private $savedIds = [];
-    /** @var string[] */
+    /** @var int[] */
     private $updateIds = [];
 
     /**
@@ -43,17 +43,17 @@ class Api
 
     public function listen(): void
     {
-        while (true) {
-            try {
-                foreach ($this->getUpdates() as $update) {
+        try {
+            $this->getUpdates(function ($updates) {
+                foreach ($updates as $update) {
                     foreach ($this->callbacks as $callback) {
                         $callback($update);
                     }
                 }
-            } catch (GuzzleException $e) {
-                echo $e->getMessage(), PHP_EOL;
-                echo $e->getTraceAsString(), PHP_EOL;
-            }
+            });
+        } catch (GuzzleException $e) {
+            echo $e->getMessage(), PHP_EOL;
+            echo $e->getTraceAsString(), PHP_EOL;
         }
     }
 
@@ -104,33 +104,25 @@ class Api
     }
 
     /**
-     * @return Update[]
+     * @param callable $callback
      *
      * @throws GuzzleException
      */
-    private function getUpdates(): array
+    private function getUpdates(callable $callback): void
     {
-        return array_reduce(
-            array_map(
-                function (Streamer $streamer, int $index) {
-                    $updates = $streamer->request(new GetUpdates($this->savedIds[$index] ?? 0));
+        foreach ($this->streamers as $index => $streamer) {
+            $streamer->request(
+                new GetUpdates($this->savedIds[$index] ?? 0),
+                function ($updates) use ($index, $callback) {
                     if (false === empty($updates)) {
                         $this->savedIds[$index] = end($updates)->getId() ?? 0;
                     }
 
-                    return $this->filterDuplicated($updates);
-                },
-                $this->streamers,
-                array_keys($this->streamers)
-            ),
-            function (?array $acc, array $updates) {
-                if (null === $acc) {
-                    return $updates;
+                    var_dump($this->savedIds);
+                    $callback($this->filterDuplicated($updates));
                 }
-
-                return array_merge($acc, $updates);
-            }
-        );
+            );
+        }
     }
 
     /**

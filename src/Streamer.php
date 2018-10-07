@@ -7,6 +7,8 @@ use Antiflood\Telegram\Update;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Exception\RequestException;
+use GuzzleHttp\Pool;
+use GuzzleHttp\Psr7\Request;
 use Psr\Http\Message\ResponseInterface;
 
 /**
@@ -69,21 +71,49 @@ class Streamer
             'form_params' => $request->getParams(),
         ];
 
-        if (false === $request->isAsync()) {
-            return $this->parseResponse($this->guzzleClient->request($request->getMethod(), $uri, $body));
+        if (true === $request->isAsync() || true === $request->isPool()) {
+            if (true === $request->isAsync()) {
+                $this->guzzleClient->requestAsync($request->getMethod(), $uri, $body)->then(
+                    function (ResponseInterface $res) use ($callback) {
+                        $callback($this->parseResponse($res));
+                    },
+                    function (RequestException $e) {
+                        echo $e->getMessage(), PHP_EOL;
+                        echo $e->getTraceAsString(), PHP_EOL;
+                    }
+                );
+
+                return [];
+            } elseif (true === $request->isPool()) {
+                $pool = new Pool(
+                    $this->guzzleClient,
+                    (function () use ($request, $uri) {
+                        while (true) {
+                            yield new Request($request->getMethod(), $uri);
+                        }
+                    })(),
+                    [
+                        'concurrency' => 1,
+                        'fulfilled' => function ($response, $index) use ($callback) {
+                            $callback($this->parseResponse($response));
+                        },
+                        'rejected' => function ($reason, $index) {
+                            echo 'Request failed!', PHP_EOL;
+                            echo 'Reason: '. $reason, PHP_EOL;
+                            echo 'Index: ' . $index, PHP_EOL;
+                        },
+                        'options' => $body,
+                    ]
+                );
+
+                $promise = $pool->promise();
+                $promise->wait();
+
+                return [];
+            }
         }
 
-        $this->guzzleClient->requestAsync($request->getMethod(), $uri, $body)->then(
-            function (ResponseInterface $res) use ($callback) {
-                $callback($this->parseResponse($res));
-            },
-            function (RequestException $e) {
-                echo $e->getMessage(), PHP_EOL;
-                echo $e->getTraceAsString(), PHP_EOL;
-            }
-        );
-
-        return [];
+        return $this->parseResponse($this->guzzleClient->request($request->getMethod(), $uri, $body));
     }
 
     /**

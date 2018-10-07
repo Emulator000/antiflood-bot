@@ -22,6 +22,14 @@ abstract class AbstractMethod implements Request
     /**
      * @return bool
      */
+    public function isPool(): bool
+    {
+        return false;
+    }
+
+    /**
+     * @return bool
+     */
     public function isAsync(): bool
     {
         return true;
