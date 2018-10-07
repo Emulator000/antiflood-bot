@@ -49,4 +49,12 @@ class GetUpdates extends AbstractMethod
             'limit' => $this->limit,
         ];
     }
+
+    /**
+     * @return bool
+     */
+    public function isAsync(): bool
+    {
+        return false;
+    }
 }

@@ -41,8 +41,6 @@ class Antiflood extends Handler
      */
     public function handle(Api $api, Update $update): void
     {
-//        $api->sendMessage($update->getMessage()->getChat()->getId(), 'Test!');
-
         $antifloodResult = $this->antiflood($update);
 
         switch ($antifloodResult->getType()) {
@@ -97,6 +95,12 @@ class Antiflood extends Handler
      */
     private function antiflood(Update $update): AntifloodResult
     {
+        if ($update->getMessage()->getChat()->getType() === Chat::PRIVATE) {
+            return (new AntifloodResult(self::TYPE_NOTHING))
+                ->setAlert(false)
+                ;
+        }
+
         $chatId = $update->getMessage()->getChat()->getId();
 
         if (false === isset($this->shitsJoins[$chatId])) {

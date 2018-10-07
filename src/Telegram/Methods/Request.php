@@ -23,4 +23,9 @@ interface Request
      * @return array
      */
     public function getParams(): array;
+
+    /**
+     * @return bool
+     */
+    public function isAsync(): bool;
 }

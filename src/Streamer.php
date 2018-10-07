@@ -6,6 +6,7 @@ use Antiflood\Telegram\Methods\Request as TelegramRequest;
 use Antiflood\Telegram\Update;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
+use GuzzleHttp\Exception\RequestException;
 use Psr\Http\Message\ResponseInterface;
 
 /**
@@ -55,22 +56,34 @@ class Streamer
 
     /**
      * @param TelegramRequest $request
+     * @param callable $callback
      *
      * @return Update[]
      *
      * @throws GuzzleException
      */
-    public function request(TelegramRequest $request): array
+    public function request(TelegramRequest $request, ?callable $callback = null): array
     {
-        return $this->parseResponse(
-            $this->guzzleClient->request(
-                $request->getMethod(),
-                $this->getUri($request->getName()),
-                [
-                    'form_params' => $request->getParams(),
-                ]
-            )
+        $uri = $this->getUri($request->getName());
+        $body = [
+            'form_params' => $request->getParams(),
+        ];
+
+        if (false === $request->isAsync()) {
+            return $this->parseResponse($this->guzzleClient->request($request->getMethod(), $uri, $body));
+        }
+
+        $this->guzzleClient->requestAsync($request->getMethod(), $uri, $body)->then(
+            function (ResponseInterface $res) use ($callback) {
+                $callback($this->parseResponse($res));
+            },
+            function (RequestException $e) {
+                echo $e->getMessage(), PHP_EOL;
+                echo $e->getTraceAsString(), PHP_EOL;
+            }
         );
+
+        return [];
     }
 
     /**

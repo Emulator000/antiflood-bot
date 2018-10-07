@@ -18,4 +18,12 @@ abstract class AbstractMethod implements Request
     {
         return self::DEFAULT_METHOD;
     }
+
+    /**
+     * @return bool
+     */
+    public function isAsync(): bool
+    {
+        return true;
+    }
 }

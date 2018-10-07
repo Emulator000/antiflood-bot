@@ -68,23 +68,25 @@ class Api
     /**
      * @param int $chatId
      * @param string $text
+     * @param callable $callback
      *
      * @throws GuzzleException
      */
-    public function sendMessage(int $chatId, string $text): void
+    public function sendMessage(int $chatId, string $text, ?callable $callback = null): void
     {
-        $this->getStreamer($chatId)->request(new SendMessage($chatId, $text));
+        $this->getStreamer($chatId)->request(new SendMessage($chatId, $text), $callback);
     }
 
     /**
      * @param int $chatId
      * @param int $messageId
+     * @param callable $callback
      *
      * @throws GuzzleException
      */
-    public function deleteMessage(int $chatId, int $messageId): void
+    public function deleteMessage(int $chatId, int $messageId, ?callable $callback = null): void
     {
-        $this->getStreamer($chatId)->request(new DeleteMessage($chatId, $messageId));
+        $this->getStreamer($chatId)->request(new DeleteMessage($chatId, $messageId), $callback);
     }
 
     /**
@@ -138,9 +140,7 @@ class Api
      */
     private function generateUpdateId(Update $update): string
     {
-        $message = $update->getMessage();
-//        $editedMessage = $update->getEditedMessage();
-
+        $message = $update->getMessage() ?? $update->getEditedMessage();
         if (null !== $message) {
             $chat = $message->getChat();
             $userId = null !== $message->getUser() ? $message->getUser()->getId() : 0;
