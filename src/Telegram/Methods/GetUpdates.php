@@ -53,8 +53,28 @@ class GetUpdates extends AbstractMethod
     /**
      * @return bool
      */
+    public function isPool(): bool
+    {
+        return true;
+    }
+
+    /**
+     * @return bool
+     */
     public function isAsync(): bool
     {
         return false;
+    }
+
+    /**
+     * @param int $lastId
+     *
+     * @return GetUpdates
+     */
+    public function setLastId(int $lastId): self
+    {
+        $this->lastId = $lastId;
+
+        return $this;
     }
 }
